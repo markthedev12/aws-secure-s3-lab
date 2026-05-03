@@ -1,39 +1,23 @@
 {
-  "_comment": "Least-privilege IAM policy for S3 access. Follows AWS Security Best Practices.",
-  "_security_rationale": {
-    "scope": "Scoped to a single bucket ARN — never use wildcard '*' resource in S3 policies",
-    "actions": "Only GetObject and PutObject granted — no List, Delete, or ACL modification",
-    "explicit_deny": "DeleteObject denied explicitly as defense-in-depth even though it is not granted",
-    "no_star_action": "s3:* is intentionally avoided — violates least privilege and is a top cloud misconfiguration"
-  },
   "Version": "2012-10-17",
   "Statement": [
     {
       "Sid": "AllowReadWrite",
-      "_comment": "Grants read and write on objects only — not on the bucket itself",
       "Effect": "Allow",
       "Action": [
         "s3:GetObject",
         "s3:PutObject"
       ],
-      "Resource": [
-        "arn:aws:s3:::your-primary-bucket-name/*"
-      ]
+      "Resource": "arn:aws:s3:::your-primary-bucket-name/*"
     },
     {
       "Sid": "AllowListBucket",
-      "_comment": "Allows listing objects in the specific bucket only — not all buckets in the account",
       "Effect": "Allow",
-      "Action": [
-        "s3:ListBucket"
-      ],
-      "Resource": [
-        "arn:aws:s3:::your-primary-bucket-name"
-      ]
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::your-primary-bucket-name"
     },
     {
       "Sid": "ExplicitDenyDelete",
-      "_comment": "Defense-in-depth: Deny always overrides Allow in IAM. Prevents accidental grants elsewhere.",
       "Effect": "Deny",
       "Action": [
         "s3:DeleteObject",
@@ -43,21 +27,6 @@
         "arn:aws:s3:::your-primary-bucket-name",
         "arn:aws:s3:::your-primary-bucket-name/*"
       ]
-    },
-    {
-      "Sid": "DenyHTTP",
-      "_comment": "Forces HTTPS-only access. Satisfies HIPAA §164.312(e)(1) encryption in transit requirement.",
-      "Effect": "Deny",
-      "Action": "s3:*",
-      "Resource": [
-        "arn:aws:s3:::your-primary-bucket-name",
-        "arn:aws:s3:::your-primary-bucket-name/*"
-      ],
-      "Condition": {
-        "Bool": {
-          "aws:SecureTransport": "false"
-        }
-      }
     }
   ]
 }
