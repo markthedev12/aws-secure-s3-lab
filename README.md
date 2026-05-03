@@ -71,7 +71,14 @@ This project reflects real-world cloud security requirements found in healthcare
 **Why:** Denies any request made over HTTP (unencrypted). This prevents man-in-the-middle attacks on data in transit — required by HIPAA Security Rule §164.312(e)(1).
 
 ### 6. CloudTrail Integration
-**Why:** S3 access logs capture object-level events. CloudTrail captures AWS API calls (who created the bucket, who changed the policy, who modified IAM). Both are needed for a complete audit trail.
+
+> **Note:** CloudTrail's default trail automatically captures S3 management 
+> API calls (bucket creation, policy changes, IAM modifications) at the account 
+> level. A dedicated trail with S3 data-event logging (GetObject, PutObject, 
+> DeleteObject at the object level) was not configured in this lab iteration. 
+> In a production or compliance environment (HIPAA, SOC 2, PCI-DSS), a dedicated 
+> data-event trail would be required for a complete audit trail and is a planned 
+> addition to this lab.
 
 ---
 
