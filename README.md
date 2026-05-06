@@ -3,6 +3,10 @@
 **Skills demonstrated:** IAM least-privilege, S3 encryption, access logging, CloudTrail, bucket policy hardening
 
 ---
+## Why This Matters
+S3 misconfiguration is one of the leading causes of cloud data breaches. 
+This lab demonstrates hands-on implementation of AWS security controls 
+to prevent unauthorized access, data exposure, and compliance violations.
 
 ## Overview
 
