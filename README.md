@@ -108,4 +108,4 @@ This project reflects real-world cloud security requirements found in healthcare
 
 ## Author
 
-Mark Schwinn | [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/) | CompTIA Security+ | AWS SAA (In Progress)
+Mark Schwinn | [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/) | CompTIA Security+ | CySA+ (In Progress)
