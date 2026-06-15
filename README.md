@@ -1,12 +1,12 @@
 # AWS Secure S3 Lab
 
-**Skills demonstrated:** IAM least-privilege, S3 encryption, access logging, CloudTrail, bucket policy hardening
+**Skills demonstrated:** IAM least-privilege · S3 encryption · Access logging · CloudTrail · Bucket policy hardening
 
 ---
+
 ## Why This Matters
-S3 misconfiguration is one of the leading causes of cloud data breaches. 
-This lab demonstrates hands-on implementation of AWS security controls 
-to prevent unauthorized access, data exposure, and compliance violations.
+
+S3 misconfiguration is one of the leading causes of cloud data breaches. This lab demonstrates hands-on implementation of AWS security controls to prevent unauthorized access, data exposure, and compliance violations — using the same principles applied in production healthcare cloud environments under HIPAA.
 
 ## Overview
 
@@ -55,6 +55,7 @@ This project reflects real-world cloud security requirements found in healthcare
 ## Security Controls Implemented
 
 ### 1. IAM Least-Privilege Policy
+
 **Why:** Granting `s3:*` to any user or role violates the principle of least privilege and is a top misconfiguration in cloud breaches. This policy grants only the minimum permissions required.
 
 **Decisions made:**
@@ -63,35 +64,34 @@ This project reflects real-world cloud security requirements found in healthcare
 - No `s3:ListAllMyBuckets` — the user cannot enumerate other buckets in the account
 
 ### 2. Server-Side Encryption (SSE-S3)
+
 **Why:** Encrypts all objects at rest by default. SSE-S3 was chosen over SSE-KMS for this lab because it requires no additional KMS key management cost, making it appropriate for non-regulated workloads. In a HIPAA or PCI-DSS environment, SSE-KMS with a customer-managed key (CMK) and key rotation would be required.
 
 ### 3. Block Public Access (All Four Settings)
+
 **Why:** Even with a private bucket policy, a misconfigured ACL can inadvertently expose objects. Enabling all four Block Public Access settings provides a hard override that prevents any public exposure regardless of object-level ACL settings.
 
 ### 4. S3 Access Logging
+
 **Why:** Logs every request made to the bucket (requester, IP, action, timestamp). Stored in a dedicated logging bucket to prevent log tampering. This satisfies audit trail requirements in ISO 27001, SOC 2, and HIPAA.
 
 ### 5. HTTPS-Only Bucket Policy
+
 **Why:** Denies any request made over HTTP (unencrypted). This prevents man-in-the-middle attacks on data in transit — required by HIPAA Security Rule §164.312(e)(1).
 
 ### 6. CloudTrail Integration
 
-> **Note:** CloudTrail's default trail automatically captures S3 management 
-> API calls (bucket creation, policy changes, IAM modifications) at the account 
-> level. A dedicated trail with S3 data-event logging (GetObject, PutObject, 
-> DeleteObject at the object level) was not configured in this lab iteration. 
-> In a production or compliance environment (HIPAA, SOC 2, PCI-DSS), a dedicated 
-> data-event trail would be required for a complete audit trail and is a planned 
-> addition to this lab.
+> **Note:** CloudTrail's default trail automatically captures S3 management API calls (bucket creation, policy changes, IAM modifications) at the account level. A dedicated trail with S3 data-event logging (GetObject, PutObject, DeleteObject at the object level) was not configured in this lab iteration. In a production or compliance environment (HIPAA, SOC 2, PCI-DSS), a dedicated data-event trail would be required for a complete audit trail and is a planned addition to this lab.
 
 ---
 
 ## Files in This Repo
 
 | File | Description |
-|------|-------------|
+|---|---|
 | `README.md` | Project overview and security rationale |
 | `iam-policy.json` | Least-privilege IAM policy with inline comments |
+| `bucket-policy.json` | HTTPS-only and restrictive bucket policy |
 | `steps.md` | Full lab walkthrough with CLI commands |
 | `screenshot/` | Console screenshots proving each configuration |
 
@@ -108,4 +108,8 @@ This project reflects real-world cloud security requirements found in healthcare
 
 ## Author
 
-Mark Schwinn | [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/) | CompTIA Security+ | CySA+ (In Progress)
+**Mark Schwinn** — IAM & Security Engineer | Healthcare IT | AWS | CompTIA Security+
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/mark-schwinn-994625362)
+[![GitHub](https://img.shields.io/badge/GitHub-markthedev12-black)](https://github.com/markthedev12)
+[![Website](https://img.shields.io/badge/Website-markschwinn.com-lightgrey)](https://markschwinn.com)
