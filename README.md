@@ -1,115 +1,78 @@
 # AWS Secure S3 Lab
 
-**Skills demonstrated:** IAM least-privilege · S3 encryption · Access logging · CloudTrail · Bucket policy hardening
+Hardened S3 architecture with least privilege IAM, encryption at rest, an HTTPS only bucket policy, access logging and CloudTrail, with the reasoning behind each control.
 
----
+> Personal lab project, built by hand in the console and CLI. A Terraform version is planned.
 
-## Why This Matters
+## Why this matters
 
-S3 misconfiguration is one of the leading causes of cloud data breaches. This lab demonstrates hands-on implementation of AWS security controls to prevent unauthorized access, data exposure, and compliance violations — using the same principles applied in production healthcare cloud environments under HIPAA.
-
-## Overview
-
-This lab demonstrates how to architect and secure an Amazon S3 environment following AWS security best practices. The focus is on applying the principle of least privilege through IAM, enabling encryption at rest, and establishing a full audit trail via access logging and CloudTrail.
-
-This project reflects real-world cloud security requirements found in healthcare, financial services, and regulated industries.
-
----
+S3 misconfiguration is one of the most common causes of cloud data exposure. This lab implements the controls that prevent it and documents why each one is there.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    IAM Layer                        │
-│  ┌──────────────────────────────────────────────┐   │
-│  │  IAM Policy (Least Privilege)                │   │
-│  │  • s3:GetObject, s3:PutObject only           │   │
-│  │  • Scoped to specific bucket ARN             │   │
-│  │  • Denies s3:DeleteObject explicitly         │   │
-│  └──────────────────┬───────────────────────────┘   │
-└─────────────────────┼───────────────────────────────┘
-                      │
-          ┌───────────▼────────────┐
-          │   Primary S3 Bucket    │
-          │  • SSE-S3 Encryption   │
-          │  • Block Public Access │
-          │  • Versioning Enabled  │
-          │  • HTTPS-only Policy   │
-          └───────────┬────────────┘
-                      │ Access Logs
-          ┌───────────▼────────────┐
-          │   Logging S3 Bucket    │
-          │  • Stores access logs  │
-          │  • Separate IAM policy │
-          └────────────────────────┘
-                      │
-          ┌───────────▼────────────┐
-          │      CloudTrail        │
-          │  • API call logging    │
-          │  • Immutable log trail │
-          └────────────────────────┘
+IAM policy (least privilege)
+  s3:GetObject and s3:PutObject only
+  scoped to one bucket ARN
+  explicit deny on s3:DeleteObject
+        |
+        v
+Primary S3 bucket
+  SSE-S3 encryption
+  Block Public Access (all four settings)
+  Versioning
+  HTTPS only bucket policy
+        |
+        | access logs
+        v
+Logging S3 bucket
+  separate bucket for access logs
+
+CloudTrail (account level)
+  management API calls
 ```
 
----
+## Controls
 
-## Security Controls Implemented
+| Control | What it does | Why |
+| --- | --- | --- |
+| Least privilege IAM policy | Grants Get and Put on one bucket, denies Delete, no bucket listing | Wildcard S3 permissions are a top misconfiguration. An explicit deny beats any allow. |
+| SSE-S3 encryption | Encrypts objects at rest by default | No key management cost. A regulated workload would use SSE-KMS with a customer managed key. |
+| Block Public Access | All four settings on | Overrides object ACLs and stops accidental public exposure. |
+| Access logging | Sends request logs to a separate bucket | Audit trail of who accessed what, kept apart from the source bucket. |
+| HTTPS only policy | Denies requests made over HTTP | Protects data in transit. |
+| CloudTrail | Records management API calls | Shows policy and configuration changes. |
 
-### 1. IAM Least-Privilege Policy
-
-**Why:** Granting `s3:*` to any user or role violates the principle of least privilege and is a top misconfiguration in cloud breaches. This policy grants only the minimum permissions required.
-
-**Decisions made:**
-- Explicitly scoped to a single bucket ARN (not `*`)
-- `s3:DeleteObject` denied explicitly even though it isn't granted — defense in depth
-- No `s3:ListAllMyBuckets` — the user cannot enumerate other buckets in the account
-
-### 2. Server-Side Encryption (SSE-S3)
-
-**Why:** Encrypts all objects at rest by default. SSE-S3 was chosen over SSE-KMS for this lab because it requires no additional KMS key management cost, making it appropriate for non-regulated workloads. In a HIPAA or PCI-DSS environment, SSE-KMS with a customer-managed key (CMK) and key rotation would be required.
-
-### 3. Block Public Access (All Four Settings)
-
-**Why:** Even with a private bucket policy, a misconfigured ACL can inadvertently expose objects. Enabling all four Block Public Access settings provides a hard override that prevents any public exposure regardless of object-level ACL settings.
-
-### 4. S3 Access Logging
-
-**Why:** Logs every request made to the bucket (requester, IP, action, timestamp). Stored in a dedicated logging bucket to prevent log tampering. This satisfies audit trail requirements in ISO 27001, SOC 2, and HIPAA.
-
-### 5. HTTPS-Only Bucket Policy
-
-**Why:** Denies any request made over HTTP (unencrypted). This prevents man-in-the-middle attacks on data in transit — required by HIPAA Security Rule §164.312(e)(1).
-
-### 6. CloudTrail Integration
-
-> **Note:** CloudTrail's default trail automatically captures S3 management API calls (bucket creation, policy changes, IAM modifications) at the account level. A dedicated trail with S3 data-event logging (GetObject, PutObject, DeleteObject at the object level) was not configured in this lab iteration. In a production or compliance environment (HIPAA, SOC 2, PCI-DSS), a dedicated data-event trail would be required for a complete audit trail and is a planned addition to this lab.
-
----
-
-## Files in This Repo
+## Files
 
 | File | Description |
-|---|---|
-| `README.md` | Project overview and security rationale |
-| `iam-policy.json` | Least-privilege IAM policy with inline comments |
-| `bucket-policy.json` | HTTPS-only and restrictive bucket policy |
-| `steps.md` | Full lab walkthrough with CLI commands |
-| `screenshot/` | Console screenshots proving each configuration |
+| --- | --- |
+| `iam-policy.json` | Least privilege IAM policy |
+| `bucket-policy.json` | HTTPS only and restrictive bucket policy |
+| `steps.md` | Full walkthrough with CLI commands |
+| `screenshot/` | Console screenshots of each configuration |
 
----
+## Limitations
 
-## Key Takeaways
+* CloudTrail here covers management events only. Object level data events (GetObject, PutObject, DeleteObject) are not configured.
+* SSE-S3 is used, not SSE-KMS.
+* CloudTrail log file validation is not covered, so the trail is not tamper evident.
+* Built manually, so it is not repeatable as code yet.
 
-- A bucket with private ACL but no Block Public Access enabled can still be made public — always enable all four BPA settings
-- SSE-S3 vs SSE-KMS is an architectural decision driven by compliance requirements and cost
-- Access logging and CloudTrail serve different purposes and both are needed for full auditability
-- Explicit Deny in IAM always overrides an Allow — use it for critical actions like Delete
+## What I would do next
 
----
+- [ ] Rebuild the whole lab in Terraform
+- [ ] Add Checkov scanning in GitHub Actions
+- [ ] Switch to SSE-KMS with a customer managed key and rotation
+- [ ] Add data event logging and log file validation
+
+## Key takeaways
+
+* A private ACL without Block Public Access can still be made public. Turn on all four settings.
+* SSE-S3 versus SSE-KMS is a cost and compliance tradeoff, not a default.
+* Access logs and CloudTrail answer different questions. You want both.
+* An explicit Deny always overrides an Allow in IAM.
 
 ## Author
 
-**Mark Schwinn** — IAM & Security Engineer | Healthcare IT | AWS | CompTIA Security+
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/mark-schwinn-994625362)
-[![GitHub](https://img.shields.io/badge/GitHub-markthedev12-black)](https://github.com/markthedev12)
-[![Website](https://img.shields.io/badge/Website-markschwinn.com-lightgrey)](https://markschwinn.com)
+Mark Schwinn · [Website](https://markschwinn.com) · [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/)
