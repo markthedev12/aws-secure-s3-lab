@@ -12,7 +12,7 @@ S3 misconfiguration is one of the most common causes of cloud data exposure. Thi
 
 ```
 IAM policy (least privilege)
-  s3:GetObject and s3:PutObject only
+  s3:GetObject, s3:PutObject, and s3:ListBucket
   scoped to one bucket ARN
   explicit deny on s3:DeleteObject
         |
@@ -36,8 +36,8 @@ CloudTrail (account level)
 
 | Control | What it does | Why |
 | --- | --- | --- |
-| Least privilege IAM policy | Grants Get and Put on one bucket, denies Delete, no bucket listing | Wildcard S3 permissions are a top misconfiguration. An explicit deny beats any allow. |
-| SSE-S3 encryption | Encrypts objects at rest by default | No key management cost. A regulated workload would use SSE-KMS with a customer managed key. |
+| Least privilege IAM policy | Grants Get/Put and bucket listing on one bucket; explicitly denies object and bucket deletion | Wildcard S3 permissions are a top misconfiguration. An explicit deny beats any allow. |
+| SSE-S3 encryption | Encrypts objects at rest by default | No key management cost. Choose key controls to fit the workload; this lab uses SSE-S3. |
 | Block Public Access | All four settings on | Overrides object ACLs and stops accidental public exposure. |
 | Access logging | Sends request logs to a separate bucket | Audit trail of who accessed what, kept apart from the source bucket. |
 | HTTPS only policy | Denies requests made over HTTP | Protects data in transit. |
@@ -75,4 +75,8 @@ CloudTrail (account level)
 
 ## Author
 
-Mark Schwinn · [Website](https://markschwinn.com) · [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/)
+Mark Schwinn Â· [Website](https://markschwinn.com) Â· [LinkedIn](https://www.linkedin.com/in/mark-schwinn-994625362/)
+
+## Reproduce and verify
+
+Start with [the walkthrough](steps.md), then follow the [policy acceptance checks and cleanup guide](docs/verification.md). Policies contain placeholders and are not applied automatically. There is no application server or Python package to install. JSON syntax checks do not prove effective permissions.

@@ -3,14 +3,14 @@
 ## Overview
 **Objective:** Build and harden an S3 environment from scratch following AWS security best practices and HIPAA-aligned controls.
 **Time to complete:** ~45 minutes
-**AWS Free Tier:** Yes — all services used fall within free tier limits
+**Costs:** S3 storage/requests, log delivery and CloudTrail configuration may incur charges. Check current pricing and account eligibility.
 **Difficulty:** Beginner–Intermediate
 
 ---
 
 ## Prerequisites
 - An AWS account (free tier is sufficient)
-- IAM user with AdministratorAccess for lab setup
+- A dedicated setup role scoped to the S3 and logging actions required by this lab; do not use root credentials
 - Basic familiarity with the AWS console
 
 ---
@@ -53,7 +53,7 @@ A separate bucket is required to store access logs — storing logs in the same 
 6. Set a log prefix (e.g. `s3-access-logs/`)
 7. Save changes
 
-**Expected result:** Any HTTP request to the primary bucket is now logged with requester IP, action, timestamp, and response code.
+**Expected result:** Server access logs arrive in the destination bucket on a best-effort basis. Delivery is delayed and is not a complete or immediate request ledger.
 
 ---
 
@@ -68,7 +68,7 @@ A separate bucket is required to store access logs — storing logs in the same 
 
 **What this enforces:**
 - All HTTP (non-HTTPS) requests are denied
-- No object or bucket ACLs can be set to public
+- All PutBucketAcl and PutObjectAcl requests are denied, including private ACL updates
 - Any uploaded object must use AES-256 encryption or the upload is rejected
 
 ---
@@ -97,13 +97,13 @@ A separate bucket is required to store access logs — storing logs in the same 
 4. Search for and attach `S3-SecureLab-LeastPrivilege`
 5. Complete user creation
 
-**Expected result:** The user can read and write objects but cannot delete them or access any other AWS service.
+**Expected result:** This policy permits listing the target bucket and reading/writing its objects, and denies deletion. Other attached policies may still grant access to other services; inspect effective permissions rather than assuming this policy removes those grants.
 
 ---
 
 ## Step 7 — Test the Configuration
 
-1. In the primary bucket, click **Upload** and upload any test file
+1. Using the scoped test identity, upload a fictional file with an explicit AES256 encryption header: `aws s3 cp demo.txt s3://YOUR_BUCKET/demo.txt --sse AES256`
 2. Confirm the upload succeeds ✅
 3. Click the file → **Object actions** → **Delete**
 4. Confirm deletion is denied (if testing with the IAM user's credentials) ✅
@@ -123,4 +123,4 @@ A separate bucket is required to store access logs — storing logs in the same 
 
 ## CloudTrail Note
 
-CloudTrail's default trail automatically captures S3 management API calls (bucket creation, policy changes, IAM modifications) at the account level. A dedicated trail with S3 data-event logging (GetObject, PutObject, DeleteObject at the object level) was not configured in this lab iteration. In a production or compliance environment (HIPAA, SOC 2, PCI-DSS), a dedicated data-event trail would be required for a complete audit trail and is a planned addition to this lab.
+CloudTrail Event history and configured trails have different retention and delivery behavior; inspect the actual trail and event selectors rather than assuming a trail exists by default. S3 object data events (GetObject, PutObject, DeleteObject) were not configured in this lab. Define event coverage and retention from the workload's audit requirements before relying on the logs.
